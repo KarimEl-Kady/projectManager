@@ -12,6 +12,7 @@ class ModuleInfrastructureTest extends TestCase
     public function test_module_commands_are_registered(): void
     {
         $this->artisan('make:module --help')->assertSuccessful();
+        $this->artisan('make:module-controller --help')->assertSuccessful();
         $this->artisan('make:module-model --help')->assertSuccessful();
         $this->artisan('make:module-request --help')->assertSuccessful();
         $this->artisan('make:module-resource --help')->assertSuccessful();
@@ -46,7 +47,10 @@ class ModuleInfrastructureTest extends TestCase
         app()->useAppPath($temporaryPath.'/app');
 
         try {
-            $this->artisan('make:module', ['name' => 'Catalog'])->assertSuccessful();
+            $this->artisan('make:module', [
+                'name' => 'Catalog',
+                '--plain' => true,
+            ])->assertSuccessful();
             $this->artisan('make:module-model', [
                 'module' => 'Catalog',
                 'name' => 'Product',
@@ -74,6 +78,10 @@ class ModuleInfrastructureTest extends TestCase
             $modulePath = $temporaryPath.'/app/Modules/Catalog';
 
             $this->assertFileExists($modulePath.'/Providers/CatalogServiceProvider.php');
+            $this->assertStringContainsString(
+                'namespace App\\Modules\\Catalog\\Providers;',
+                $files->get($modulePath.'/Providers/CatalogServiceProvider.php'),
+            );
             $this->assertFileExists($modulePath.'/Models/Product.php');
             $this->assertFileExists($modulePath.'/Database/Factories/ProductFactory.php');
             $this->assertNotEmpty($files->glob($modulePath.'/Database/Migrations/*_create_products_table.php'));
@@ -81,6 +89,49 @@ class ModuleInfrastructureTest extends TestCase
             $this->assertFileExists($modulePath.'/Resources/ProductResource.php');
             $this->assertFileExists($modulePath.'/Repositories/ProductRepository.php');
             $this->assertFileExists($modulePath.'/Services/ProductService.php');
+        } finally {
+            app()->useAppPath($originalAppPath);
+            $files->deleteDirectory($temporaryPath);
+        }
+    }
+
+    public function test_interactive_module_wizard_creates_the_selected_stack(): void
+    {
+        $files = new Filesystem;
+        $originalAppPath = app()->path();
+        $temporaryPath = sys_get_temp_dir().'/project-manager-module-wizard-'.Str::uuid();
+
+        app()->useAppPath($temporaryPath.'/app');
+
+        try {
+            $this->artisan('make:module')
+                ->expectsQuestion('What is the module name?', 'Inventory')
+                ->expectsQuestion('What is the primary class/model name?', 'Product')
+                ->expectsConfirmation('Create a model?', 'yes')
+                ->expectsConfirmation('Create a model factory?', 'yes')
+                ->expectsConfirmation('Create a migration?', 'yes')
+                ->expectsConfirmation('Create a repository?', 'yes')
+                ->expectsConfirmation('Create a service?', 'yes')
+                ->expectsConfirmation('Create an API controller?', 'yes')
+                ->expectsConfirmation('Create a web controller?', 'yes')
+                ->expectsConfirmation('Create a standard request?', 'yes')
+                ->expectsConfirmation('Create a fetch request?', 'yes')
+                ->expectsConfirmation('Create an API resource?', 'yes')
+                ->expectsConfirmation('Create the module now?', 'yes')
+                ->assertSuccessful();
+
+            $modulePath = $temporaryPath.'/app/Modules/Inventory';
+
+            $this->assertFileExists($modulePath.'/Models/Product.php');
+            $this->assertFileExists($modulePath.'/Database/Factories/ProductFactory.php');
+            $this->assertNotEmpty($files->glob($modulePath.'/Database/Migrations/*_create_products_table.php'));
+            $this->assertFileExists($modulePath.'/Repositories/ProductRepository.php');
+            $this->assertFileExists($modulePath.'/Services/ProductService.php');
+            $this->assertFileExists($modulePath.'/Controllers/Api/ProductController.php');
+            $this->assertFileExists($modulePath.'/Controllers/Web/ProductController.php');
+            $this->assertFileExists($modulePath.'/Requests/StoreProductRequest.php');
+            $this->assertFileExists($modulePath.'/Requests/FetchProductRequest.php');
+            $this->assertFileExists($modulePath.'/Resources/ProductResource.php');
         } finally {
             app()->useAppPath($originalAppPath);
             $files->deleteDirectory($temporaryPath);
