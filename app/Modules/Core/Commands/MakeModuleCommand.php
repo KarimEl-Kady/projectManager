@@ -33,7 +33,6 @@ class MakeModuleCommand extends Command
     private array $directories = [
         'Controllers/Api',
         'Controllers/Web',
-        'Commands',
         'Database/Factories',
         'Database/Migrations',
         'Database/Seeders',
