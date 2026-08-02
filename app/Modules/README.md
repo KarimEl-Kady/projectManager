@@ -1,15 +1,28 @@
 # Application modules
 
-Create a module:
+Create a module interactively. The wizard asks for the primary class name and
+which model, persistence, HTTP, and resource classes to generate before writing
+the module:
 
 ```bash
-php artisan make:module Billing
+php artisan make:module
 ```
+
+Generate the complete stack without questions:
+
+```bash
+php artisan make:module Billing --entity=Invoice --all
+```
+
+Use `--plain` to create only the directory, provider, and route structure. Each
+component also has an individual option for scripted module generation.
 
 Create classes inside it:
 
 ```bash
 php artisan make:module-model Billing Invoice --factory --migration
+php artisan make:module-controller Billing Invoice --api
+php artisan make:module-controller Billing Invoice --web
 php artisan make:module-request Billing StoreInvoice
 php artisan make:module-request Billing FetchInvoice --fetch
 php artisan make:module-resource Billing Invoice
