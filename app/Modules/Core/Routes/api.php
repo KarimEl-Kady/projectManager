@@ -1,0 +1,3 @@
+<?php
+
+// Core API routes.
