@@ -77,6 +77,7 @@ class ModuleInfrastructureTest extends TestCase
 
             $modulePath = $temporaryPath.'/app/Modules/Catalog';
 
+            $this->assertDirectoryDoesNotExist($modulePath.'/Commands');
             $this->assertFileExists($modulePath.'/Providers/CatalogServiceProvider.php');
             $this->assertStringContainsString(
                 'namespace App\\Modules\\Catalog\\Providers;',
@@ -122,6 +123,7 @@ class ModuleInfrastructureTest extends TestCase
 
             $modulePath = $temporaryPath.'/app/Modules/Inventory';
 
+            $this->assertDirectoryDoesNotExist($modulePath.'/Commands');
             $this->assertFileExists($modulePath.'/Models/Product.php');
             $this->assertFileExists($modulePath.'/Database/Factories/ProductFactory.php');
             $this->assertNotEmpty($files->glob($modulePath.'/Database/Migrations/*_create_products_table.php'));

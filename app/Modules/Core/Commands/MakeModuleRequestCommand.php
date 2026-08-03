@@ -21,13 +21,14 @@ class MakeModuleRequestCommand extends ModuleGeneratorCommand
     protected function contents(string $module, string $class, string $namespace, string $qualifiedClass): string
     {
         $parent = $this->option('fetch') ? 'FetchRequest' : 'BaseRequest';
+        $parentClass = "App\\Modules\\Core\\Requests\\{$parent}";
 
         return <<<PHP
 <?php
 
 namespace {$namespace};
 
-use App\Modules\Core\Requests\{$parent};
+use {$parentClass};
 
 class {$class} extends {$parent}
 {

@@ -36,17 +36,17 @@ class ModuleServiceProvider extends ServiceProvider
         }
 
         if ($this->app->runningInConsole()) {
-            $commands = [];
+            $commands = collect($this->classesIn('Core', 'Commands'))
+                ->filter(function (string $command): bool {
+                    return is_subclass_of($command, Command::class)
+                        && ! (new ReflectionClass($command))->isAbstract();
+                })
+                ->values()
+                ->all();
 
-            foreach ($modules as $module) {
-                foreach ($this->classesIn($module, 'Commands') as $command) {
-                    if (is_subclass_of($command, Command::class) && ! (new ReflectionClass($command))->isAbstract()) {
-                        $commands[] = $command;
-                    }
-                }
+            if ($commands !== []) {
+                $this->commands($commands);
             }
-
-            $this->commands($commands);
         }
     }
 
@@ -97,7 +97,10 @@ class ModuleServiceProvider extends ServiceProvider
         $dashboard = $this->modulePath($module, 'Routes/dashboard.php');
 
         if (is_file($api)) {
-            $router->middleware('api')->group($api);
+            $router
+                ->middleware('api')
+                ->prefix(config('project.routes.api.prefix', 'api'))
+                ->group($api);
         }
 
         if (is_file($web)) {
