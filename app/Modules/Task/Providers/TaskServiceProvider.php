@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Modules\User\Providers;
+namespace App\Modules\Task\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-class UserServiceProvider extends ServiceProvider
+class TaskServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
