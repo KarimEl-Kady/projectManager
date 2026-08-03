@@ -1,0 +1,138 @@
+x-application-build: &application-build
+  context: .
+  target: application
+
+x-application-environment: &application-environment
+  APP_NAME: ${DOCKER_APP_NAME:-Task Management API}
+  APP_ENV: ${DOCKER_APP_ENV:-local}
+  APP_KEY: ${DOCKER_APP_KEY:-base64:YXAfdMD3Xz1qBrAbQV26dd0cGscOO0ne2VuDqm3IEU0=}
+  APP_DEBUG: ${DOCKER_APP_DEBUG:-true}
+  APP_URL: ${DOCKER_APP_URL:-http://localhost:8000}
+  LOG_CHANNEL: ${DOCKER_LOG_CHANNEL:-stderr}
+  LOG_LEVEL: ${DOCKER_LOG_LEVEL:-debug}
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: ${DOCKER_DB_DATABASE:-projectmanager}
+  DB_USERNAME: ${DOCKER_DB_USERNAME:-laravel}
+  DB_PASSWORD: ${DOCKER_DB_PASSWORD:-secret}
+  CACHE_STORE: ${DOCKER_CACHE_STORE:-database}
+  QUEUE_CONNECTION: ${DOCKER_QUEUE_CONNECTION:-database}
+  SESSION_DRIVER: ${DOCKER_SESSION_DRIVER:-database}
+  MAIL_MAILER: ${DOCKER_MAIL_MAILER:-log}
+  SEED_DATABASE: ${DOCKER_SEED_DATABASE:-false}
+  TZ: ${DOCKER_TZ:-Africa/Cairo}
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DOCKER_DB_DATABASE:-projectmanager}
+      MYSQL_USER: ${DOCKER_DB_USERNAME:-laravel}
+      MYSQL_PASSWORD: ${DOCKER_DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_ROOT_PASSWORD:-root}
+      TZ: ${DOCKER_TZ:-Africa/Cairo}
+    ports:
+      - "${DOCKER_DB_PORT:-3307}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - application
+
+  migrate:
+    build: *application-build
+    environment: *application-environment
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        php artisan migrate --force
+        if [ "$${SEED_DATABASE}" = "true" ]; then
+          php artisan db:seed --force
+        fi
+    restart: "no"
+    networks:
+      - application
+
+  app:
+    build: *application-build
+    restart: unless-stopped
+    init: true
+    environment: *application-environment
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - "9000"
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - application
+
+  nginx:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${DOCKER_APP_PORT:-8000}:80"
+    networks:
+      - application
+
+  queue:
+    build: *application-build
+    restart: unless-stopped
+    init: true
+    user: www-data
+    environment: *application-environment
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=90 --max-time=3600
+    stop_grace_period: 30s
+    networks:
+      - application
+
+  scheduler:
+    build: *application-build
+    restart: unless-stopped
+    init: true
+    user: www-data
+    environment: *application-environment
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    command: php artisan schedule:work
+    stop_grace_period: 30s
+    networks:
+      - application
+
+volumes:
+  mysql-data:
+
+networks:
+  application:
+    driver: bridge
