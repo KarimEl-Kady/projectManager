@@ -1,0 +1,3 @@
+<?php
+
+// Project dashboard routes.
