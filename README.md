@@ -7,12 +7,60 @@ membership-scoped authorization.
 
 ## Requirements
 
+For Docker installation, only Docker Engine with the Compose plugin is needed.
+For native installation, use:
+
 - PHP 8.3 or newer
 - Composer 2
 - MySQL 8+ (SQLite is used by the automated tests)
 - A queue worker for overdue-task email notifications
 
-## Installation
+## Docker installation
+
+Build and start the API, MySQL, migration runner, queue worker, scheduler, and
+Nginx with one command:
+
+```bash
+docker compose up --build -d
+docker compose ps
+```
+
+The stack works without a Docker environment file and uses development-only
+defaults. To customize ports, credentials, or Laravel settings, create a local
+file and pass it explicitly:
+
+```bash
+cp .env.docker.example .env.docker
+docker compose --env-file .env.docker up --build -d
+```
+
+The application is available at `http://127.0.0.1:8000`, Swagger UI at
+`http://127.0.0.1:8000/docs`, and MySQL is exposed to the host on port `3307`.
+The `/api` path returns a small JSON index linking to the documentation and
+health endpoint.
+
+Migrations run automatically before PHP, the queue worker, and scheduler start.
+Load sample data once with:
+
+```bash
+docker compose exec app php artisan db:seed --force
+```
+
+Useful development commands:
+
+```bash
+docker compose logs -f
+docker compose exec app php artisan test
+docker compose exec app vendor/bin/pint --test
+docker compose exec app php artisan migrate:fresh --seed --force
+docker compose down
+```
+
+`docker compose down` preserves the MySQL data volume. Use
+`docker compose down --volumes` only when you intentionally want to delete the
+Docker database and start from an empty volume.
+
+## Native installation
 
 ```bash
 git clone git@github.com:KarimEl-Kady/projectManager.git
