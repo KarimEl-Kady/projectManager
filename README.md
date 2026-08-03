@@ -1,58 +1,190 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Task Management API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A RESTful Task Management System built with Laravel 13 and Sanctum. The codebase
+uses domain modules, form requests, API resources, repositories, services,
+integer-backed enums, UUID route identifiers, soft deletes, pagination, and
+membership-scoped authorization.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3 or newer
+- Composer 2
+- MySQL 8+ (SQLite is used by the automated tests)
+- A queue worker for overdue-task email notifications
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone git@github.com:KarimEl-Kady/projectManager.git
+cd projectManager
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Configure the database in `.env`:
 
-## Contributing
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=projectmanager
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Create the schema and sample data, then start the API:
 
-## Code of Conduct
+```bash
+php artisan migrate --seed
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+The seeded demo account is:
 
-## Security Vulnerabilities
+```text
+Email: demo@example.com
+Password: password
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+For queued overdue notifications, run the worker and scheduler in separate
+terminals:
 
-## License
+```bash
+php artisan queue:work
+php artisan schedule:work
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## API authentication
+
+The default base URL is `http://127.0.0.1:8000/api`. Register or log in to receive
+a Sanctum token. Protected endpoints require:
+
+```http
+Authorization: Bearer YOUR_TOKEN
+Accept: application/json
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Register and receive a token |
+| `POST` | `/auth/login` | Log in and receive a token |
+| `GET` | `/auth/me` | Return the authenticated user |
+| `POST` | `/auth/logout` | Revoke the current token |
+| `GET` | `/projects` | Paginated projects belonging to the user |
+| `POST` | `/projects` | Create a project and attach the user |
+| `GET` | `/projects/{project_uuid}` | View an accessible project |
+| `PATCH` | `/projects/{project_uuid}` | Update an accessible project |
+| `DELETE` | `/projects/{project_uuid}` | Soft-delete a project and its tasks |
+| `GET` | `/projects/{project_uuid}/tasks` | Paginated and filtered task list |
+| `POST` | `/projects/{project_uuid}/tasks` | Create a task |
+| `GET` | `/projects/{project_uuid}/tasks/{task_uuid}` | View a task |
+| `PATCH` | `/projects/{project_uuid}/tasks/{task_uuid}` | Update a task |
+| `DELETE` | `/projects/{project_uuid}/tasks/{task_uuid}` | Soft-delete a task |
+| `GET` | `/dashboard` | Return project and task metrics |
+
+### Project payload
+
+```json
+{
+  "title": "Task Management API",
+  "description": "Laravel technical assessment",
+  "status": "active"
+}
+```
+
+Project statuses are `active`, `completed`, and `archived`.
+
+Project listing supports:
+
+```text
+?status=active&search=management&sort=created_at&direction=desc&per_page=15&page=1
+```
+
+### Task payload
+
+```json
+{
+  "title": "Write feature tests",
+  "description": "Cover authorization and filtering",
+  "priority": "high",
+  "status": "in_progress",
+  "due_date": "2026-08-10"
+}
+```
+
+Task statuses are `todo`, `in_progress`, and `done`. Priorities are `low`,
+`medium`, and `high`.
+
+Task listing supports:
+
+```text
+?status=in_progress&priority=high&search=tests&sort=due_date&direction=asc&per_page=15&page=1
+```
+
+## Response behavior
+
+- Creation returns `201 Created`.
+- Successful deletion returns `204 No Content`.
+- Invalid input returns `422 Unprocessable Entity` with Laravel's `errors` map.
+- Missing/invalid authentication returns `401 Unauthorized`.
+- Resources outside the authenticated user's project membership return `404`
+  to avoid disclosing their existence.
+- Collection endpoints include standard Laravel pagination `links` and `meta`.
+
+## Architecture
+
+```text
+app/Modules/
+├── Core/       shared requests, repositories, services, module generators
+├── User/       Sanctum authentication and user domain
+├── Project/    project CRUD and membership scope
+├── Task/       task CRUD, filters, activities, and overdue notification job
+└── Dashboard/  aggregate metrics
+```
+
+`project_users` represents project membership. Every project/task query is
+scoped through that relationship. Database values use compact integer-backed
+enums while API requests and responses use readable strings.
+
+Task changes are written to `task_activities`. A daily queued job finds overdue,
+unfinished tasks, emails project members once, and records
+`overdue_notified_at`.
+
+## Database and sample data
+
+Migration files create:
+
+- `users`
+- `personal_access_tokens`
+- `projects`
+- `project_users`
+- `tasks`
+- `task_notes`
+- `task_activities`
+- Laravel cache, session, and queue tables
+
+Run `php artisan migrate:fresh --seed` to rebuild all tables and create the demo
+user plus sample projects, tasks, notes, and activities.
+
+## Tests and quality checks
+
+```bash
+php artisan test
+vendor/bin/pint --test
+composer validate --no-check-publish
+```
+
+The feature suite covers auth, validation, user isolation, project CRUD, task
+CRUD and filters, soft deletes, activity logging, dashboard metrics, factories,
+module generation, and one-time overdue notifications.
+
+## API documentation
+
+- Interactive Swagger UI: `http://127.0.0.1:8000/docs`
+- Swagger aliases: `/swagger` and `/api/documentation`
+- OpenAPI: [`docs/openapi.yaml`](docs/openapi.yaml)
+- Postman: [`docs/Task-Management.postman_collection.json`](docs/Task-Management.postman_collection.json)
+- Module generator guide: [`app/Modules/README.md`](app/Modules/README.md)

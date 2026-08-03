@@ -5,3 +5,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::view('/docs', 'swagger')->name('docs');
+
+Route::get('/docs/openapi.yaml', function () {
+    return response()->file(base_path('docs/openapi.yaml'), [
+        'Content-Type' => 'application/yaml',
+    ]);
+})->name('docs.openapi');
+
+Route::redirect('/swagger', '/docs');
+Route::redirect('/api/documentation', '/docs');

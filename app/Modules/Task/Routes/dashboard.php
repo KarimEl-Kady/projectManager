@@ -1,0 +1,3 @@
+<?php
+
+// Task dashboard routes.
