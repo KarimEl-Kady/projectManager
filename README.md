@@ -183,6 +183,8 @@ module generation, and one-time overdue notifications.
 
 ## API documentation
 
+- Interactive Swagger UI: `http://127.0.0.1:8000/docs`
+- Swagger aliases: `/swagger` and `/api/documentation`
 - OpenAPI: [`docs/openapi.yaml`](docs/openapi.yaml)
 - Postman: [`docs/Task-Management.postman_collection.json`](docs/Task-Management.postman_collection.json)
 - Module generator guide: [`app/Modules/README.md`](app/Modules/README.md)
