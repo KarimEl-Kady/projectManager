@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
                     ->create()
                     ->each(function (Task $task) use ($user): void {
                         $task->notes()->create([
-                            'description' => fake()->sentence(),
+                            'description' => \Faker\Factory::create()->sentence(),
                         ]);
                         $task->activities()->create([
                             'user_id' => $user->id,
