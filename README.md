@@ -103,6 +103,63 @@ php artisan queue:work
 php artisan schedule:work
 ```
 
+## Frontend (React SPA)
+
+A React + TypeScript + Vite frontend for this API lives in [`frontend/`](frontend/).
+It talks to the Laravel API over HTTP using Sanctum Bearer tokens — no shared
+backend code, no mock data.
+
+### Requirements
+
+- Node.js 18+ and npm
+- The Laravel API running locally (see installation above) with CORS configured
+  to allow the frontend's origin (see below)
+
+### Installation
+
+```bash
+cd frontend
+npm install
+cp .env.example .env
+```
+
+`frontend/.env` sets the API base URL:
+
+```dotenv
+VITE_API_URL=http://localhost:8000/api
+```
+
+### Running
+
+```bash
+npm run dev
+```
+
+The app is served at `http://localhost:5173`. Log in with the seeded demo
+account (`demo@example.com` / `password`) or register a new one.
+
+Other scripts:
+
+```bash
+npm run build     # type-check and produce a production build in dist/
+npm run preview   # serve the production build locally
+npm run lint       # ESLint
+npm run format     # Prettier
+```
+
+### CORS
+
+The API has no CORS configuration by default, so a browser-based frontend on a
+different origin cannot call it until you allow that origin. This repo ships
+[`config/cors.php`](config/cors.php), scoped to `api/*` and driven by the
+`CORS_ALLOWED_ORIGINS` env var (comma-separated), which defaults to
+`http://localhost:5173` — matching the Vite dev server above. Update it in the
+backend's `.env` if you serve the frontend from a different origin:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=http://localhost:5173,https://your-deployed-frontend.example
+```
+
 ## API authentication
 
 The default base URL is `http://127.0.0.1:8000/api`. Register or log in to receive
